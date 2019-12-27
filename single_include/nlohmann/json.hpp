@@ -2442,7 +2442,14 @@ uses the standard template types.
 
 @since version 1.0.0
 */
+#ifdef WSTRING_SUPPORT
+using json = basic_json< std::map, std::vector, std::wstring >;
+#define __J(s)	L ## s
+#else
 using json = basic_json<>;
+#define __J(s)	s
+#endif
+#define _J(s)	__J(s)
 }  // namespace nlohmann
 
 #endif  // INCLUDE_NLOHMANN_JSON_FWD_HPP_
@@ -3312,9 +3319,9 @@ template <typename IteratorType> class iteration_proxy_value
     /// last stringified array index
     mutable std::size_t array_index_last = 0;
     /// a string representation of the array index
-    mutable string_type array_index_str = "0";
+    mutable string_type array_index_str = _J("0");
     /// an empty string (to return a reference for primitive values)
-    const string_type empty_str = "";
+    const string_type empty_str = _J("");
 
   public:
     explicit iteration_proxy_value(IteratorType it) noexcept : anchor(it) {}
@@ -7395,35 +7402,35 @@ class lexer
                     {
                         // quotation mark
                         case '\"':
-                            add('\"');
+                            add(_J('\"'));
                             break;
                         // reverse solidus
                         case '\\':
-                            add('\\');
+                            add(_J('\\'));
                             break;
                         // solidus
                         case '/':
-                            add('/');
+                            add(_J('/'));
                             break;
                         // backspace
                         case 'b':
-                            add('\b');
+                            add(_J('\b'));
                             break;
                         // form feed
                         case 'f':
-                            add('\f');
+                            add(_J('\f'));
                             break;
                         // line feed
                         case 'n':
-                            add('\n');
+                            add(_J('\n'));
                             break;
                         // carriage return
                         case 'r':
-                            add('\r');
+                            add(_J('\r'));
                             break;
                         // tab
                         case 't':
-                            add('\t');
+                            add(_J('\t'));
                             break;
 
                         // unicode escapes
@@ -10886,7 +10893,7 @@ class json_pointer
             auto reference_token = reference_string.substr(start, slash - start);
 
             // check reference tokens are properly escaped
-            for (std::size_t pos = reference_token.find_first_of('~');
+            for (std::size_t pos = reference_token.find_first_of(_J('~'));
                     pos != std::string::npos;
                     pos = reference_token.find_first_of('~', pos + 1))
             {
@@ -11849,7 +11856,7 @@ class binary_writer
             {
                 if (add_prefix)
                 {
-                    oa->write_character(to_char_type('Z'));
+                    oa->write_character(to_char_type(_J('Z')));
                 }
                 break;
             }
@@ -11859,8 +11866,8 @@ class binary_writer
                 if (add_prefix)
                 {
                     oa->write_character(j.m_value.boolean
-                                        ? to_char_type('T')
-                                        : to_char_type('F'));
+                                        ? to_char_type(_J('T'))
+                                        : to_char_type(_J('F')));
                 }
                 break;
             }
@@ -11887,7 +11894,7 @@ class binary_writer
             {
                 if (add_prefix)
                 {
-                    oa->write_character(to_char_type('S'));
+                    oa->write_character(to_char_type(_J('S')));
                 }
                 write_number_with_ubjson_prefix(j.m_value.string->size(), true);
                 oa->write_characters(
@@ -11900,7 +11907,7 @@ class binary_writer
             {
                 if (add_prefix)
                 {
-                    oa->write_character(to_char_type('['));
+                    oa->write_character(to_char_type(_J('[')));
                 }
 
                 bool prefix_required = true;
@@ -11917,14 +11924,14 @@ class binary_writer
                     if (same_prefix)
                     {
                         prefix_required = false;
-                        oa->write_character(to_char_type('$'));
+                        oa->write_character(to_char_type(_J('$')));
                         oa->write_character(first_prefix);
                     }
                 }
 
                 if (use_count)
                 {
-                    oa->write_character(to_char_type('#'));
+                    oa->write_character(to_char_type(_J('#')));
                     write_number_with_ubjson_prefix(j.m_value.array->size(), true);
                 }
 
@@ -11935,7 +11942,7 @@ class binary_writer
 
                 if (not use_count)
                 {
-                    oa->write_character(to_char_type(']'));
+                    oa->write_character(to_char_type(_J(']')));
                 }
 
                 break;
@@ -11945,7 +11952,7 @@ class binary_writer
             {
                 if (add_prefix)
                 {
-                    oa->write_character(to_char_type('{'));
+                    oa->write_character(to_char_type(_J('{')));
                 }
 
                 bool prefix_required = true;
@@ -11962,14 +11969,14 @@ class binary_writer
                     if (same_prefix)
                     {
                         prefix_required = false;
-                        oa->write_character(to_char_type('$'));
+                        oa->write_character(to_char_type(_J('$')));
                         oa->write_character(first_prefix);
                     }
                 }
 
                 if (use_count)
                 {
-                    oa->write_character(to_char_type('#'));
+                    oa->write_character(to_char_type(_J('#')));
                     write_number_with_ubjson_prefix(j.m_value.object->size(), true);
                 }
 
@@ -11984,7 +11991,7 @@ class binary_writer
 
                 if (not use_count)
                 {
-                    oa->write_character(to_char_type('}'));
+                    oa->write_character(to_char_type(_J('}')));
                 }
 
                 break;
@@ -12356,7 +12363,7 @@ class binary_writer
         {
             if (add_prefix)
             {
-                oa->write_character(to_char_type('i'));  // int8
+                oa->write_character(to_char_type(_J('i')));  // int8
             }
             write_number(static_cast<std::uint8_t>(n));
         }
@@ -12364,7 +12371,7 @@ class binary_writer
         {
             if (add_prefix)
             {
-                oa->write_character(to_char_type('U'));  // uint8
+                oa->write_character(to_char_type(_J('U')));  // uint8
             }
             write_number(static_cast<std::uint8_t>(n));
         }
@@ -12372,7 +12379,7 @@ class binary_writer
         {
             if (add_prefix)
             {
-                oa->write_character(to_char_type('I'));  // int16
+                oa->write_character(to_char_type(_J('I')));  // int16
             }
             write_number(static_cast<std::int16_t>(n));
         }
@@ -12380,7 +12387,7 @@ class binary_writer
         {
             if (add_prefix)
             {
-                oa->write_character(to_char_type('l'));  // int32
+                oa->write_character(to_char_type(_J('l')));  // int32
             }
             write_number(static_cast<std::int32_t>(n));
         }
@@ -12388,7 +12395,7 @@ class binary_writer
         {
             if (add_prefix)
             {
-                oa->write_character(to_char_type('L'));  // int64
+                oa->write_character(to_char_type(_J('L')));  // int64
             }
             write_number(static_cast<std::int64_t>(n));
         }
@@ -12409,7 +12416,7 @@ class binary_writer
         {
             if (add_prefix)
             {
-                oa->write_character(to_char_type('i'));  // int8
+                oa->write_character(to_char_type(_J('i')));  // int8
             }
             write_number(static_cast<std::int8_t>(n));
         }
@@ -12417,7 +12424,7 @@ class binary_writer
         {
             if (add_prefix)
             {
-                oa->write_character(to_char_type('U'));  // uint8
+                oa->write_character(to_char_type(_J('U')));  // uint8
             }
             write_number(static_cast<std::uint8_t>(n));
         }
@@ -12425,7 +12432,7 @@ class binary_writer
         {
             if (add_prefix)
             {
-                oa->write_character(to_char_type('I'));  // int16
+                oa->write_character(to_char_type(_J('I')));  // int16
             }
             write_number(static_cast<std::int16_t>(n));
         }
@@ -12433,7 +12440,7 @@ class binary_writer
         {
             if (add_prefix)
             {
-                oa->write_character(to_char_type('l'));  // int32
+                oa->write_character(to_char_type(_J('l')));  // int32
             }
             write_number(static_cast<std::int32_t>(n));
         }
@@ -12441,7 +12448,7 @@ class binary_writer
         {
             if (add_prefix)
             {
-                oa->write_character(to_char_type('L'));  // int64
+                oa->write_character(to_char_type(_J('L')));  // int64
             }
             write_number(static_cast<std::int64_t>(n));
         }
@@ -13799,7 +13806,7 @@ class serializer
     @param[in] ichar  indentation character to use
     @param[in] error_handler_  how to react on decoding errors
     */
-    serializer(output_adapter_t<char> s, const char ichar,
+    serializer(output_adapter_t<typename string_t::value_type> s, const typename string_t::value_type ichar,
                error_handler_t error_handler_ = error_handler_t::strict)
         : o(std::move(s))
         , loc(std::localeconv())
@@ -13845,13 +13852,13 @@ class serializer
             {
                 if (val.m_value.object->empty())
                 {
-                    o->write_characters("{}", 2);
+                    o->write_characters(_J("{}"), 2);
                     return;
                 }
 
                 if (pretty_print)
                 {
-                    o->write_characters("{\n", 2);
+                    o->write_characters(_J("{\n"), 2);
 
                     // variable to hold indentation for recursive calls
                     const auto new_indent = current_indent + indent_step;
@@ -13865,50 +13872,50 @@ class serializer
                     for (std::size_t cnt = 0; cnt < val.m_value.object->size() - 1; ++cnt, ++i)
                     {
                         o->write_characters(indent_string.c_str(), new_indent);
-                        o->write_character('\"');
+                        o->write_character(_J('\"'));
                         dump_escaped(i->first, ensure_ascii);
-                        o->write_characters("\": ", 3);
+                        o->write_characters(_J("\": "), 3);
                         dump(i->second, true, ensure_ascii, indent_step, new_indent);
-                        o->write_characters(",\n", 2);
+						o->write_characters(_J(",\n"), 2);
                     }
 
                     // last element
                     assert(i != val.m_value.object->cend());
                     assert(std::next(i) == val.m_value.object->cend());
                     o->write_characters(indent_string.c_str(), new_indent);
-                    o->write_character('\"');
+					o->write_character(_J('\"'));
                     dump_escaped(i->first, ensure_ascii);
-                    o->write_characters("\": ", 3);
+					o->write_characters(_J("\": "), 3);
                     dump(i->second, true, ensure_ascii, indent_step, new_indent);
 
-                    o->write_character('\n');
+                    o->write_character(_J('\n'));
                     o->write_characters(indent_string.c_str(), current_indent);
-                    o->write_character('}');
+                    o->write_character(_J('}'));
                 }
                 else
                 {
-                    o->write_character('{');
+                    o->write_character(_J('{'));
 
                     // first n-1 elements
                     auto i = val.m_value.object->cbegin();
                     for (std::size_t cnt = 0; cnt < val.m_value.object->size() - 1; ++cnt, ++i)
                     {
-                        o->write_character('\"');
+                        o->write_character(_J('\"'));
                         dump_escaped(i->first, ensure_ascii);
                         o->write_characters("\":", 2);
                         dump(i->second, false, ensure_ascii, indent_step, current_indent);
-                        o->write_character(',');
+                        o->write_character(_J(','));
                     }
 
                     // last element
                     assert(i != val.m_value.object->cend());
                     assert(std::next(i) == val.m_value.object->cend());
-                    o->write_character('\"');
+                    o->write_character(_J('\"'));
                     dump_escaped(i->first, ensure_ascii);
                     o->write_characters("\":", 2);
                     dump(i->second, false, ensure_ascii, indent_step, current_indent);
 
-                    o->write_character('}');
+                    o->write_character(_J('}'));
                 }
 
                 return;
@@ -13947,27 +13954,27 @@ class serializer
                     o->write_characters(indent_string.c_str(), new_indent);
                     dump(val.m_value.array->back(), true, ensure_ascii, indent_step, new_indent);
 
-                    o->write_character('\n');
+                    o->write_character(_J('\n'));
                     o->write_characters(indent_string.c_str(), current_indent);
-                    o->write_character(']');
+                    o->write_character(_J(']'));
                 }
                 else
                 {
-                    o->write_character('[');
+                    o->write_character(_J('['));
 
                     // first n-1 elements
                     for (auto i = val.m_value.array->cbegin();
                             i != val.m_value.array->cend() - 1; ++i)
                     {
                         dump(*i, false, ensure_ascii, indent_step, current_indent);
-                        o->write_character(',');
+                        o->write_character(_J(','));
                     }
 
                     // last element
                     assert(not val.m_value.array->empty());
                     dump(val.m_value.array->back(), false, ensure_ascii, indent_step, current_indent);
 
-                    o->write_character(']');
+                    o->write_character(_J(']'));
                 }
 
                 return;
@@ -13975,9 +13982,9 @@ class serializer
 
             case value_t::string:
             {
-                o->write_character('\"');
+                o->write_character(_J('\"'));
                 dump_escaped(*val.m_value.string, ensure_ascii);
-                o->write_character('\"');
+                o->write_character(_J('\"'));
                 return;
             }
 
@@ -14199,9 +14206,9 @@ class serializer
                                 }
                                 else
                                 {
-                                    string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type('\xEF');
-                                    string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type('\xBF');
-                                    string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type('\xBD');
+                                    string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type(_J('\xEF'));
+                                    string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type(_J('\xBF'));
+                                    string_buffer[bytes++] = detail::binary_writer<BasicJsonType, char>::to_char_type(_J('\xBD'));
                                 }
 
                                 // write buffer and reset index; there must be 13 bytes
@@ -14360,7 +14367,7 @@ class serializer
         // special case for "0"
         if (x == 0)
         {
-            o->write_character('0');
+            o->write_character(_J('0'));
             return;
         }
 
@@ -16558,12 +16565,12 @@ class basic_json
            handlers added in version 3.4.0.
     */
     string_t dump(const int indent = -1,
-                  const char indent_char = ' ',
+                  const typename string_t::value_type indent_char = _J(' '),
                   const bool ensure_ascii = false,
                   const error_handler_t error_handler = error_handler_t::strict) const
     {
         string_t result;
-        serializer s(detail::output_adapter<char, string_t>(result), indent_char, error_handler);
+        serializer s(detail::output_adapter<string_t::value_type, string_t>(result), indent_char, error_handler);
 
         if (indent >= 0)
         {
@@ -20621,7 +20628,7 @@ class basic_json
 
     - The indentation character can be controlled with the member variable
       `fill` of the output stream @a o. For instance, the manipulator
-      `std::setfill('\\t')` sets indentation to use a tab character rather than
+      `std::setfill(_J('\\t'))` sets indentation to use a tab character rather than
       the default space character.
 
     @param[in,out] o  stream to serialize to
