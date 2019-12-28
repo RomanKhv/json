@@ -102,6 +102,11 @@ struct position_t
     }
 };
 
+inline std::string to_std_string(const std::string& src)
+{
+	return src;
+}
+
 } // namespace detail
 } // namespace nlohmann
 
@@ -8578,11 +8583,11 @@ scan_number_done:
 
             // literals
             case 't':
-                return scan_literal("true", 4, token_type::literal_true);
+                return scan_literal(_J("true"), 4, token_type::literal_true);
             case 'f':
-                return scan_literal("false", 5, token_type::literal_false);
+                return scan_literal(_J("false"), 5, token_type::literal_false);
             case 'n':
-                return scan_literal("null", 4, token_type::literal_null);
+                return scan_literal(_J("null"), 4, token_type::literal_null);
 
             // string
             case '\"':
@@ -13794,6 +13799,7 @@ template<typename BasicJsonType>
 class serializer
 {
     using string_t = typename BasicJsonType::string_t;
+	using char_t = typename string_t::value_type;
     using number_float_t = typename BasicJsonType::number_float_t;
     using number_integer_t = typename BasicJsonType::number_integer_t;
     using number_unsigned_t = typename BasicJsonType::number_unsigned_t;
@@ -13806,7 +13812,7 @@ class serializer
     @param[in] ichar  indentation character to use
     @param[in] error_handler_  how to react on decoding errors
     */
-    serializer(output_adapter_t<typename string_t::value_type> s, const typename string_t::value_type ichar,
+    serializer(output_adapter_t<char_t> s, const char_t ichar,
                error_handler_t error_handler_ = error_handler_t::strict)
         : o(std::move(s))
         , loc(std::localeconv())
@@ -13902,7 +13908,7 @@ class serializer
                     {
                         o->write_character(_J('\"'));
                         dump_escaped(i->first, ensure_ascii);
-                        o->write_characters("\":", 2);
+						o->write_characters(_J("\":"), 2);
                         dump(i->second, false, ensure_ascii, indent_step, current_indent);
                         o->write_character(_J(','));
                     }
@@ -13912,7 +13918,7 @@ class serializer
                     assert(std::next(i) == val.m_value.object->cend());
                     o->write_character(_J('\"'));
                     dump_escaped(i->first, ensure_ascii);
-                    o->write_characters("\":", 2);
+					o->write_characters(_J("\":"), 2);
                     dump(i->second, false, ensure_ascii, indent_step, current_indent);
 
                     o->write_character(_J('}'));
@@ -13925,13 +13931,13 @@ class serializer
             {
                 if (val.m_value.array->empty())
                 {
-                    o->write_characters("[]", 2);
+                    o->write_characters(_J("[]"), 2);
                     return;
                 }
 
                 if (pretty_print)
                 {
-                    o->write_characters("[\n", 2);
+					o->write_characters(_J("[\n"), 2);
 
                     // variable to hold indentation for recursive calls
                     const auto new_indent = current_indent + indent_step;
@@ -13946,7 +13952,7 @@ class serializer
                     {
                         o->write_characters(indent_string.c_str(), new_indent);
                         dump(*i, true, ensure_ascii, indent_step, new_indent);
-                        o->write_characters(",\n", 2);
+						o->write_characters(_J(",\n"), 2);
                     }
 
                     // last element
@@ -13992,11 +13998,11 @@ class serializer
             {
                 if (val.m_value.boolean)
                 {
-                    o->write_characters("true", 4);
+                    o->write_characters(_J("true"), 4);
                 }
                 else
                 {
-                    o->write_characters("false", 5);
+                    o->write_characters(_J("false"), 5);
                 }
                 return;
             }
@@ -14021,13 +14027,13 @@ class serializer
 
             case value_t::discarded:
             {
-                o->write_characters("<discarded>", 11);
+                o->write_characters(_J("<discarded>"), 11);
                 return;
             }
 
             case value_t::null:
             {
-                o->write_characters("null", 4);
+                o->write_characters(_J("null"), 4);
                 return;
             }
 
@@ -14266,8 +14272,8 @@ class serializer
                 case error_handler_t::strict:
                 {
                     std::string sn(3, '\0');
-                    (std::snprintf)(&sn[0], sn.size(), "%.2X", static_cast<std::uint8_t>(s.back()));
-                    JSON_THROW(type_error::create(316, "incomplete UTF-8 string; last byte: 0x" + sn));
+                    (std::snprintf)(&sn[0], sn.size(), _J("%.2X"), static_cast<std::uint8_t>(s.back()));
+                    JSON_THROW(type_error::create(316, _J("incomplete UTF-8 string; last byte: 0x") + sn));
                 }
 
                 case error_handler_t::ignore:
@@ -14284,11 +14290,11 @@ class serializer
                     // add a replacement character
                     if (ensure_ascii)
                     {
-                        o->write_characters("\\ufffd", 6);
+                        o->write_characters(_J("\\ufffd"), 6);
                     }
                     else
                     {
-                        o->write_characters("\xEF\xBF\xBD", 3);
+                        o->write_characters(_J("\xEF\xBF\xBD"), 3);
                     }
                     break;
                 }
@@ -14437,7 +14443,7 @@ class serializer
         // NaN / inf
         if (not std::isfinite(x))
         {
-            o->write_characters("null", 4);
+            o->write_characters(_J("null"), 4);
             return;
         }
 
@@ -14591,23 +14597,23 @@ class serializer
 
   private:
     /// the output of the serializer
-    output_adapter_t<char> o = nullptr;
+    output_adapter_t<char_t> o = nullptr;
 
     /// a (hopefully) large enough character buffer
-    std::array<char, 64> number_buffer{{}};
+    std::array<char_t, 64> number_buffer{{}};
 
     /// the locale
     const std::lconv* loc = nullptr;
     /// the locale's thousand separator character
-    const char thousands_sep = '\0';
+    const char_t thousands_sep = '\0';
     /// the locale's decimal point character
-    const char decimal_point = '\0';
+    const char_t decimal_point = '\0';
 
     /// string buffer
-    std::array<char, 512> string_buffer{{}};
+    std::array<char_t, 512> string_buffer{{}};
 
     /// the indentation character
-    const char indent_char;
+    const char_t indent_char;
     /// the indentation string
     string_t indent_string;
 
@@ -14874,53 +14880,53 @@ class basic_json
     {
         basic_json result;
 
-        result["copyright"] = "(C) 2013-2017 Niels Lohmann";
-        result["name"] = "JSON for Modern C++";
-        result["url"] = "https://github.com/nlohmann/json";
-        result["version"]["string"] =
-            std::to_string(NLOHMANN_JSON_VERSION_MAJOR) + "." +
-            std::to_string(NLOHMANN_JSON_VERSION_MINOR) + "." +
+        result[_J("copyright")] = _J("(C) 2013-2017 Niels Lohmann");
+        result[_J("name")] = _J("JSON for Modern C++");
+        result[_J(_J("url"))] = _J("https://github.com/nlohmann/json");
+        result[_J("version")][_J("string")] =
+            std::to_string(NLOHMANN_JSON_VERSION_MAJOR) + _J(".") +
+            std::to_string(NLOHMANN_JSON_VERSION_MINOR) + _J(".") +
             std::to_string(NLOHMANN_JSON_VERSION_PATCH);
-        result["version"]["major"] = NLOHMANN_JSON_VERSION_MAJOR;
-        result["version"]["minor"] = NLOHMANN_JSON_VERSION_MINOR;
-        result["version"]["patch"] = NLOHMANN_JSON_VERSION_PATCH;
+        result[_J("version")][_J("major")] = NLOHMANN_JSON_VERSION_MAJOR;
+        result[_J("version")][_J("minor")] = NLOHMANN_JSON_VERSION_MINOR;
+        result[_J("version")][_J("patch")] = NLOHMANN_JSON_VERSION_PATCH;
 
 #ifdef _WIN32
-        result["platform"] = "win32";
+        result[_J("platform")] = _J("win32");
 #elif defined __linux__
-        result["platform"] = "linux";
+        result[_J("platform")] = _J("linux");
 #elif defined __APPLE__
-        result["platform"] = "apple";
+        result[_J("platform")] = _J("apple");
 #elif defined __unix__
-        result["platform"] = "unix";
+        result[_J("platform")] = _J("unix");
 #else
-        result["platform"] = "unknown";
+        result[_J("platform")] = _J("unknown");
 #endif
 
 #if defined(__ICC) || defined(__INTEL_COMPILER)
-        result["compiler"] = {{"family", "icc"}, {"version", __INTEL_COMPILER}};
+        result[_J("compiler")] = {{_J("family"), _J("icc")}, {_J("version"), __INTEL_COMPILER}};
 #elif defined(__clang__)
-        result["compiler"] = {{"family", "clang"}, {"version", __clang_version__}};
+        result[_J("compiler")] = {{_J("family"), _J("clang")}, {_J("version"), __clang_version__}};
 #elif defined(__GNUC__) || defined(__GNUG__)
-        result["compiler"] = {{"family", "gcc"}, {"version", std::to_string(__GNUC__) + "." + std::to_string(__GNUC_MINOR__) + "." + std::to_string(__GNUC_PATCHLEVEL__)}};
+        result[_J("compiler")] = {{_J("family"), _J("gcc")}, {_J("version"), std::to_string(__GNUC__) + "." + std::to_string(__GNUC_MINOR__) + "." + std::to_string(__GNUC_PATCHLEVEL__)}};
 #elif defined(__HP_cc) || defined(__HP_aCC)
-        result["compiler"] = "hp"
+        result[_J("compiler")] = _J("hp")
 #elif defined(__IBMCPP__)
-        result["compiler"] = {{"family", "ilecpp"}, {"version", __IBMCPP__}};
+        result[_J("compiler")] = {{_J("family"), _J("ilecpp")}, {_J("version"), __IBMCPP__}};
 #elif defined(_MSC_VER)
-        result["compiler"] = {{"family", "msvc"}, {"version", _MSC_VER}};
+        result[_J("compiler")] = {{_J("family"), _J("msvc")}, {_J("version"), _MSC_VER}};
 #elif defined(__PGI)
-        result["compiler"] = {{"family", "pgcpp"}, {"version", __PGI}};
+        result[_J("compiler")] = {{_J("family"), _J("pgcpp")}, {_J("version"), __PGI}};
 #elif defined(__SUNPRO_CC)
-        result["compiler"] = {{"family", "sunpro"}, {"version", __SUNPRO_CC}};
+        result[_J("compiler")] = {{_J("family"), _J("sunpro")}, {_J("version"), __SUNPRO_CC}};
 #else
-        result["compiler"] = {{"family", "unknown"}, {"version", "unknown"}};
+        result[_J("compiler")] = {{_J("family"), _J("unknown")}, {_J("version"), _J("unknown")}};
 #endif
 
 #ifdef __cplusplus
-        result["compiler"]["c++"] = std::to_string(__cplusplus);
+        result[_J("compiler")]["c++"] = std::to_string(__cplusplus);
 #else
-        result["compiler"]["c++"] = "unknown";
+        result[_J("compiler")]["c++"] = _J("unknown");
 #endif
         return result;
     }
@@ -15464,7 +15470,7 @@ class basic_json
 
                 case value_t::string:
                 {
-                    string = create<string_t>("");
+                    string = create<string_t>(_J(""));
                     break;
                 }
 
